@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+//   generator client {
+//     provider = "prisma-client"
+//     output   = "../generated/prisma"
+//   }
+
+//  datasource db {
+//    provider = "postgresql"
+//    url      = env("DATABASE_URL")
+//  }
+
+// Schema para o projeto Investment System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id
+  name      String
+  orders    Order[]
+  positions Position[]
+
+  transactions Transaction[]
+}
+
+model Asset {
+  symbol String @id
+  name   String
+
+  orders Order[]
+  positions Position[]
+  transactions Transaction[]
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  userId    String
+  symbol    String
+  type      OrderType
+  quantity  Float
+  price     Float
+  status    OrderStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user   User  @relation(fields: [userId], references: [id])
+  asset  Asset @relation(fields: [symbol], references: [symbol])
+
+  transactions Transaction[]
+}
+
+model Position {
+  id           String  @id @default(uuid())
+  userId       String
+  symbol       String
+  quantity     Float
+  averagePrice Float
+
+  user  User  @relation(fields: [userId], references: [id])
+  asset Asset @relation(fields: [symbol], references: [symbol])
+
+  @@unique([userId, symbol])
+}
+
+model Transaction {
+  id        String   @id @default(uuid())
+  userId    String
+  orderId   String
+  symbol    String
+  type      String
+  quantity  Float
+  price     Float
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  asset Asset @relation(fields: [symbol], references: [symbol])
+  order Order @relation(fields: [orderId], references: [id])
+}
+
+enum OrderType {
+  BUY
+  SELL
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  EXECUTED
+  REJECTED
+  CANCELLED
+}
